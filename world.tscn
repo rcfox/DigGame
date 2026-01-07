@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://cykte8ei6ff1l"]
+
+[ext_resource type="PackedScene" uid="uid://wng6jlal6b7t" path="res://destructible_terrain.tscn" id="1_f3sb7"]
+
+[node name="World" type="Node2D" unique_id=869695374]
+
+[node name="DestructibleTerrain" parent="." unique_id=1032730928 instance=ExtResource("1_f3sb7")]
+sky_height = 200

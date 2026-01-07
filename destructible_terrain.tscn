@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://wng6jlal6b7t"]
+
+[ext_resource type="Script" uid="uid://c1pvop774d2rj" path="res://destructible_terrain.gd" id="1_ysbi6"]
+
+[node name="DestructibleTerrain" type="Node2D" unique_id=1032730928]
+script = ExtResource("1_ysbi6")
+
+[node name="Graphics" type="Sprite2D" parent="." unique_id=1143303166]
+position = Vector2(512, 384)
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1322020650]
