@@ -26,6 +26,9 @@ func init_terrain() -> void:
 	if not is_inside_tree():
 		return
 	is_terrain_dirty = true
+	
+	init_chunks()
+	
 	terrain_details = Image.create_empty(width, height, false, Image.FORMAT_RGBA8)
 	terrain_details.fill(Color.WHITE)
 	terrain_details.fill_rect(Rect2i(0, 0, width, sky_height), Color.TRANSPARENT)
@@ -33,25 +36,74 @@ func init_terrain() -> void:
 	$Graphics.texture = ImageTexture.create_from_image(terrain_details)
 	update_terrain()
 	
+func init_chunks() -> void:
+	var num_chunks = ceili(width / float(chunk_size)) * ceili(height / float(chunk_size))
+	is_chunk_dirty.resize(num_chunks)
+	
+	for child in $Chunks.get_children():
+		child.queue_free()
+	
+	for chunk in range(num_chunks):
+		is_chunk_dirty[chunk] = true
+		var body = StaticBody2D.new()
+		$Chunks.add_child(body)
+
+func get_chunk_rect(chunk_index: int) -> Rect2i:
+	var chunks_per_row = ceili(width / float(chunk_size))
+	
+	var chunk_x = chunk_index % chunks_per_row
+	@warning_ignore("integer_division")
+	var chunk_y = chunk_index / chunks_per_row
+	
+	var x = chunk_x * chunk_size
+	var y = chunk_y * chunk_size
+	
+	# Handle edge chunks that might be smaller
+	var w = mini(chunk_size, width - x)
+	var h = mini(chunk_size, height - y)
+	
+	return Rect2i(x, y, w, h)
+	
+func get_chunk_index(x: int, y: int) -> int:
+	if x < 0 or x >= width or y < 0 or y >= height:
+		return -1
+	
+	var chunks_per_row = ceili(width / float(chunk_size))
+	
+	@warning_ignore("integer_division")
+	var chunk_x = x / chunk_size
+	@warning_ignore("integer_division")
+	var chunk_y = y / chunk_size
+	return chunk_y * chunks_per_row + chunk_x
+	
 func update_terrain() -> void:
 	if not is_terrain_dirty:
 		return
-		
-	for child in $StaticBody2D.get_children():
-		child.queue_free()
-		
-	var collidable = BitMap.new()
-	collidable.create_from_image_alpha(terrain_details)
-	
-	var polygons = collidable.opaque_to_polygons(Rect2(0, 0, width, height), 2)
-	
-	for polygon in polygons:
-		var collision = CollisionPolygon2D.new()
-		collision.polygon = polygon
-		$StaticBody2D.add_child(collision)
-		
-	$Graphics.texture.update(terrain_details)
 	is_terrain_dirty = false
+	
+	if $Graphics.texture:
+			$Graphics.texture.update(terrain_details)
+		
+	for chunk in range(is_chunk_dirty.size()):
+		if not is_chunk_dirty[chunk]:
+			continue
+		is_chunk_dirty[chunk] = false
+			
+		var chunk_body: StaticBody2D = $Chunks.get_child(chunk)
+		for child in chunk_body.get_children():
+			child.queue_free()
+		
+		var collidable = BitMap.new()
+		var chunk_rect = get_chunk_rect(chunk)
+		collidable.create_from_image_alpha(terrain_details.get_region(chunk_rect))
+		
+		chunk_body.position = chunk_rect.position
+	
+		var polygons = collidable.opaque_to_polygons(Rect2(0, 0, chunk_size, chunk_size), 2)
+		for polygon in polygons:
+			var collision = CollisionPolygon2D.new()
+			collision.polygon = polygon
+			chunk_body.add_child(collision)
 	
 func _ready() -> void:
 	init_terrain()
@@ -80,4 +132,6 @@ func carve_circle(center: Vector2i, radius: int) -> void:
 			var x = center.x + dx
 			var y = center.y + dy
 			if x >= 0 and x < width and y >= 0 and y < height:
+				var chunk_index = get_chunk_index(x, y)
+				is_chunk_dirty[chunk_index] = true
 				terrain_details.set_pixel(x, y, Color.TRANSPARENT)

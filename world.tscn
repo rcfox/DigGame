@@ -5,4 +5,3 @@
 [node name="World" type="Node2D" unique_id=869695374]
 
 [node name="DestructibleTerrain" parent="." unique_id=1032730928 instance=ExtResource("1_f3sb7")]
-sky_height = 200
