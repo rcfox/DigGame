@@ -5,7 +5,4 @@
 [node name="DestructibleTerrain" type="Node2D" unique_id=1032730928]
 script = ExtResource("1_ysbi6")
 
-[node name="Graphics" type="Sprite2D" parent="." unique_id=1143303166]
-position = Vector2(512, 384)
-
 [node name="Chunks" type="Node" parent="." unique_id=1607832150]

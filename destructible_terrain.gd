@@ -16,89 +16,42 @@ extends Node2D
 		sky_height = value
 		init_terrain()
 
-@export var chunk_size: int = 128
+@export var chunk_size: int = 128:
+	set(value):
+		chunk_size = value
+		init_terrain()
 
 var terrain_details: Image
-var is_terrain_dirty: bool = true
+
 var dirty_chunks: Array[int]
+var chunks: Array[TerrainChunk] = []
 
 func init_terrain() -> void:
 	if not is_inside_tree():
 		return
-	is_terrain_dirty = true
-	
-	init_chunks()
 	
 	terrain_details = Image.create_empty(width, height, false, Image.FORMAT_RGBA8)
 	terrain_details.fill(Color.WHITE)
 	terrain_details.fill_rect(Rect2i(0, 0, width, sky_height), Color.TRANSPARENT)
-	$Graphics.position = Vector2(width / 2.0, height / 2.0)
-	$Graphics.texture = ImageTexture.create_from_image(terrain_details)
+	
+	init_chunks()
 	update_terrain()
 	
 func init_chunks() -> void:
-	var num_chunks = ceili(width / float(chunk_size)) * ceili(height / float(chunk_size))
-	
 	for child in $Chunks.get_children():
 		child.queue_free()
-	
-	for chunk in range(num_chunks):
-		dirty_chunks.append(chunk)
-		var body = StaticBody2D.new()
-		$Chunks.add_child(body)
-
-func get_chunk_rect(chunk_index: int) -> Rect2i:
-	var chunks_per_row = ceili(width / float(chunk_size))
-	
-	var chunk_x = chunk_index % chunks_per_row
-	@warning_ignore("integer_division")
-	var chunk_y = chunk_index / chunks_per_row
-	
-	var x = chunk_x * chunk_size
-	var y = chunk_y * chunk_size
-	
-	# Handle edge chunks that might be smaller
-	var w = mini(chunk_size, width - x)
-	var h = mini(chunk_size, height - y)
-	
-	return Rect2i(x, y, w, h)
-	
-func get_chunk_index(x: int, y: int) -> int:
-	if x < 0 or x >= width or y < 0 or y >= height:
-		return -1
-	
-	var chunks_per_row = ceili(width / float(chunk_size))
-	
-	@warning_ignore("integer_division")
-	var chunk_x = x / chunk_size
-	@warning_ignore("integer_division")
-	var chunk_y = y / chunk_size
-	return chunk_y * chunks_per_row + chunk_x
+		
+	chunks = TerrainChunk.generate_chunks(width, height, chunk_size)
+	for chunk_idx in range(chunks.size()):
+		var chunk = chunks[chunk_idx]
+		$Chunks.add_child(chunk)
+		dirty_chunks.append(chunk_idx)
 	
 func update_terrain() -> void:
-	if not is_terrain_dirty:
-		return
-	is_terrain_dirty = false
-	
-	if $Graphics.texture:
-		$Graphics.texture.update(terrain_details)
+	for chunk_idx in dirty_chunks:
+		var chunk = chunks[chunk_idx]
+		chunk.update(terrain_details)
 		
-	for chunk in dirty_chunks:			
-		var chunk_body: StaticBody2D = $Chunks.get_child(chunk)
-		for child in chunk_body.get_children():
-			child.queue_free()
-		
-		var collidable = BitMap.new()
-		var chunk_rect = get_chunk_rect(chunk)
-		collidable.create_from_image_alpha(terrain_details.get_region(chunk_rect))
-		
-		chunk_body.position = chunk_rect.position
-	
-		var polygons = collidable.opaque_to_polygons(Rect2(0, 0, chunk_size, chunk_size), 2)
-		for polygon in polygons:
-			var collision = CollisionPolygon2D.new()
-			collision.polygon = polygon
-			chunk_body.add_child(collision)
 	dirty_chunks.clear()
 	
 func _ready() -> void:
@@ -106,21 +59,12 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	update_terrain()
-	
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_EDITOR_PRE_SAVE:
-		# Clear the texture before saving so that we don't serialize it.
-		$Graphics.texture = null
-	elif what == NOTIFICATION_EDITOR_POST_SAVE:
-		# Regenerate the terrain after saving so it renders again.
-		init_terrain()
 
 func _input(event):
 	if event is InputEventMouseButton and event.is_pressed():
 		carve_circle(to_local(get_global_mouse_position()), 30)
 
 func carve_circle(center: Vector2i, radius: int) -> void:
-	is_terrain_dirty = true
 	var rsq = radius * radius
 	for dy in range(-radius, radius + 1):
 		var dx_max = int(sqrt(rsq - dy * dy))
@@ -128,8 +72,7 @@ func carve_circle(center: Vector2i, radius: int) -> void:
 			var x = center.x + dx
 			var y = center.y + dy
 			if x >= 0 and x < width and y >= 0 and y < height:
-				var chunk_index = get_chunk_index(x, y)
-				
+				var chunk_index = TerrainChunk.get_chunk_index(width, height, chunk_size, x, y)
 				# This array should usually be tiny, so the "not in" check should be cheap.
 				if chunk_index not in dirty_chunks:
 					dirty_chunks.append(chunk_index)
