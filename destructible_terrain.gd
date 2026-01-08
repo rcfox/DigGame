@@ -20,6 +20,11 @@ extends Node2D
 	set(value):
 		chunk_size = value
 		init_terrain()
+		
+@export var terrain_color: Color = Color(0x33/255.0, 0x22/255.0, 0x11/255.0, 1): # Hex color: #332211
+	set(value):
+		terrain_color = value
+		init_terrain()
 
 var terrain_details: Image
 
@@ -30,9 +35,12 @@ func init_terrain() -> void:
 	if not is_inside_tree():
 		return
 	
+	var color = Color(terrain_color)
 	terrain_details = Image.create_empty(width, height, false, Image.FORMAT_RGBA8)
-	terrain_details.fill(Color.from_rgba8(0x33, 0x22, 0x11, 0xff))
-	terrain_details.fill_rect(Rect2i(0, 0, width, sky_height), Color.TRANSPARENT)
+	terrain_details.fill(color)
+	
+	color.a = 0
+	terrain_details.fill_rect(Rect2i(0, 0, width, sky_height), color)
 	
 	init_chunks()
 	update_terrain()
