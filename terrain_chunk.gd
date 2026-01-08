@@ -50,6 +50,7 @@ func _init(chunk_rect: Rect2i) -> void:
 	self.rect = chunk_rect
 	self.position = self.rect.position
 	self.collision_body = StaticBody2D.new()
+	self.collision_body.visible = false
 	self.sprite = Sprite2D.new()
 	self.sprite.position = self.rect.size / 2.0
 	add_child(self.sprite)
