@@ -20,7 +20,7 @@ extends Node2D
 
 var terrain_details: Image
 var is_terrain_dirty: bool = true
-var is_chunk_dirty: Array[bool]
+var dirty_chunks: Array[int]
 
 func init_terrain() -> void:
 	if not is_inside_tree():
@@ -38,13 +38,12 @@ func init_terrain() -> void:
 	
 func init_chunks() -> void:
 	var num_chunks = ceili(width / float(chunk_size)) * ceili(height / float(chunk_size))
-	is_chunk_dirty.resize(num_chunks)
 	
 	for child in $Chunks.get_children():
 		child.queue_free()
 	
 	for chunk in range(num_chunks):
-		is_chunk_dirty[chunk] = true
+		dirty_chunks.append(chunk)
 		var body = StaticBody2D.new()
 		$Chunks.add_child(body)
 
@@ -82,13 +81,9 @@ func update_terrain() -> void:
 	is_terrain_dirty = false
 	
 	if $Graphics.texture:
-			$Graphics.texture.update(terrain_details)
+		$Graphics.texture.update(terrain_details)
 		
-	for chunk in range(is_chunk_dirty.size()):
-		if not is_chunk_dirty[chunk]:
-			continue
-		is_chunk_dirty[chunk] = false
-			
+	for chunk in dirty_chunks:			
 		var chunk_body: StaticBody2D = $Chunks.get_child(chunk)
 		for child in chunk_body.get_children():
 			child.queue_free()
@@ -104,12 +99,13 @@ func update_terrain() -> void:
 			var collision = CollisionPolygon2D.new()
 			collision.polygon = polygon
 			chunk_body.add_child(collision)
+	dirty_chunks.clear()
 	
 func _ready() -> void:
 	init_terrain()
 
 func _process(_delta: float) -> void:
-	update_terrain()		
+	update_terrain()
 	
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_EDITOR_PRE_SAVE:
@@ -133,5 +129,8 @@ func carve_circle(center: Vector2i, radius: int) -> void:
 			var y = center.y + dy
 			if x >= 0 and x < width and y >= 0 and y < height:
 				var chunk_index = get_chunk_index(x, y)
-				is_chunk_dirty[chunk_index] = true
+				
+				# This array should usually be tiny, so the "not in" check should be cheap.
+				if chunk_index not in dirty_chunks:
+					dirty_chunks.append(chunk_index)
 				terrain_details.set_pixel(x, y, Color.TRANSPARENT)
