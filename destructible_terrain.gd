@@ -31,7 +31,7 @@ func init_terrain() -> void:
 		return
 	
 	terrain_details = Image.create_empty(width, height, false, Image.FORMAT_RGBA8)
-	terrain_details.fill(Color.WHITE)
+	terrain_details.fill(Color.from_rgba8(0x33, 0x22, 0x11, 0xff))
 	terrain_details.fill_rect(Rect2i(0, 0, width, sky_height), Color.TRANSPARENT)
 	
 	init_chunks()
@@ -76,4 +76,6 @@ func carve_circle(center: Vector2i, radius: int) -> void:
 				# This array should usually be tiny, so the "not in" check should be cheap.
 				if chunk_index not in dirty_chunks:
 					dirty_chunks.append(chunk_index)
-				terrain_details.set_pixel(x, y, Color.TRANSPARENT)
+				var color = terrain_details.get_pixel(x, y)
+				color.a = 0
+				terrain_details.set_pixel(x, y, color)
