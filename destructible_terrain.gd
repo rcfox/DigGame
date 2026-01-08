@@ -121,7 +121,7 @@ func _notification(what: int) -> void:
 
 func _input(event):
 	if event is InputEventMouseButton and event.is_pressed():
-		carve_circle(to_local(event.position), 20)
+		carve_circle(to_local(get_global_mouse_position()), 30)
 
 func carve_circle(center: Vector2i, radius: int) -> void:
 	is_terrain_dirty = true
