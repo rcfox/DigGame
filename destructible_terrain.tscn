@@ -1,8 +1,0 @@
-[gd_scene format=3 uid="uid://wng6jlal6b7t"]
-
-[ext_resource type="Script" uid="uid://c1pvop774d2rj" path="res://destructible_terrain.gd" id="1_ysbi6"]
-
-[node name="DestructibleTerrain" type="Node2D" unique_id=1032730928]
-script = ExtResource("1_ysbi6")
-
-[node name="Chunks" type="Node" parent="." unique_id=1607832150]
