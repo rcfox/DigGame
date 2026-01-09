@@ -35,7 +35,7 @@ func get_or_create_chunk(chunk_coords: Vector2i) -> TerrainChunk:
 		var chunk = TerrainChunk.new(chunk_coords, Vector2i(chunk_size, chunk_size), terrain_color)
 		
 		if chunk_coords in unloaded_chunks:
-			chunk.terrain.load_webp_from_buffer(unloaded_chunks[chunk_coords])
+			chunk.terrain.load_png_from_buffer(unloaded_chunks[chunk_coords])
 			unloaded_chunks.erase(chunk_coords)
 		else:
 			chunk.generate_from_noise(noise)
@@ -94,7 +94,7 @@ func update_loaded_chunks() -> void:
 func unload_chunk(chunk_coords: Vector2i) -> void:
 	if chunk_coords in chunks:
 		var chunk = chunks[chunk_coords]
-		unloaded_chunks[chunk_coords] = chunk.terrain.save_webp_to_buffer()
+		unloaded_chunks[chunk_coords] = chunk.terrain.save_png_to_buffer()
 		chunk.queue_free()
 		chunks.erase(chunk_coords)
 	
@@ -125,6 +125,9 @@ func carve_circle(center: Vector2i, radius: int) -> void:
 			var y = center.y + dy
 
 			var chunk_coords = get_chunk_coords(Vector2i(x, y))
+			if chunk_coords not in chunks:
+				continue
+				
 			var chunk = chunks[chunk_coords]
 			var terrain = chunk.terrain
 			var cx = x - chunk.position.x
