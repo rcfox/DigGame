@@ -117,6 +117,15 @@ func _input(event):
 		carve_circle(to_local(get_global_mouse_position()), 30)
 
 func carve_circle(center: Vector2i, radius: int) -> void:
+	var top_left = get_chunk_coords(center - Vector2i(radius, radius))
+	var bottom_right = get_chunk_coords(center + Vector2i(radius, radius))
+	
+	for cy in range(top_left.y, bottom_right.y + 1):  # These are chunk coords
+		for cx in range(top_left.x, bottom_right.x + 1):
+			var chunk_coords = Vector2i(cx, cy)
+			if chunk_coords in chunks:
+				dirty_chunks[chunk_coords] = true
+	
 	var rsq = radius * radius
 	for dy in range(-radius, radius + 1):
 		var dx_max = int(sqrt(rsq - dy * dy))
@@ -130,9 +139,8 @@ func carve_circle(center: Vector2i, radius: int) -> void:
 				
 			var chunk = chunks[chunk_coords]
 			var terrain = chunk.terrain
-			var cx = x - chunk.position.x
-			var cy = y - chunk.position.y
+			var cx = x - int(chunk.position.x)
+			var cy = y - int(chunk.position.y)
 			var color = terrain.get_pixel(cx, cy)
 			color.a = 0
 			terrain.set_pixel(cx, cy, color)
-			dirty_chunks[chunk_coords] = true
