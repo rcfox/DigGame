@@ -5,7 +5,8 @@
 
 [node name="World" type="Node2D" unique_id=869695374]
 
-[node name="DestructibleTerrain" parent="." unique_id=1032730928 instance=ExtResource("1_f3sb7")]
+[node name="DestructibleTerrain" parent="." unique_id=1032730928 node_paths=PackedStringArray("players") instance=ExtResource("1_f3sb7")]
+players = [NodePath("../Player")]
 
 [node name="Player" parent="." unique_id=44482857 instance=ExtResource("2_fj7yv")]
 position = Vector2(284, -245)
