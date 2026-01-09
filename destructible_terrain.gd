@@ -11,8 +11,8 @@ extends Node2D
 		terrain_color = value
 		init_terrain()
 		
-@export var load_radius: int = 5  # Chunks to keep loaded around player
-@export var unload_radius: int = 10  # Unload beyond this distance
+@export var load_radius: int = 10  # Chunks to keep loaded around player
+@export var unload_radius: int = 15  # Unload beyond this distance
 
 @export var players: Array[Node2D] = []
 
