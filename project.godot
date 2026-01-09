@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="WormsTest"
+config/name="DigGame"
 run/main_scene="uid://cykte8ei6ff1l"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
