@@ -20,6 +20,7 @@ var noise = FastNoiseLite.new()
 
 var chunks: Dictionary[Vector2i, TerrainChunk] = {}
 var dirty_chunks: Dictionary[Vector2i, bool] = {}
+var unloaded_chunks: Dictionary[Vector2i, PackedByteArray] = {}
 
 var chunks_to_generate: Array[Vector2i] = []
 
@@ -32,7 +33,12 @@ func get_chunk_coords(world_pos: Vector2i) -> Vector2i:
 func get_or_create_chunk(chunk_coords: Vector2i) -> TerrainChunk:
 	if chunk_coords not in chunks:
 		var chunk = TerrainChunk.new(chunk_coords, Vector2i(chunk_size, chunk_size), terrain_color)
-		chunk.generate_from_noise(noise)
+		
+		if chunk_coords in unloaded_chunks:
+			chunk.terrain.load_webp_from_buffer(unloaded_chunks[chunk_coords])
+			unloaded_chunks.erase(chunk_coords)
+		else:
+			chunk.generate_from_noise(noise)
 		chunk.update()
 		$Chunks.add_child(chunk)
 		chunks[chunk_coords] = chunk
@@ -87,7 +93,9 @@ func update_loaded_chunks() -> void:
 
 func unload_chunk(chunk_coords: Vector2i) -> void:
 	if chunk_coords in chunks:
-		chunks[chunk_coords].queue_free()
+		var chunk = chunks[chunk_coords]
+		unloaded_chunks[chunk_coords] = chunk.terrain.save_webp_to_buffer()
+		chunk.queue_free()
 		chunks.erase(chunk_coords)
 	
 func _ready() -> void:
