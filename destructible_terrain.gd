@@ -1,4 +1,4 @@
-@tool
+#@tool
 extends Node2D
 
 @export var width: int = 1024:
@@ -26,7 +26,7 @@ extends Node2D
 		terrain_color = value
 		init_terrain()
 
-var terrain_details: Image
+var noise = FastNoiseLite.new()
 
 var dirty_chunks: Array[int]
 var chunks: Array[TerrainChunk] = []
@@ -35,13 +35,6 @@ func init_terrain() -> void:
 	if not is_inside_tree():
 		return
 	
-	var color = Color(terrain_color)
-	terrain_details = Image.create_empty(width, height, false, Image.FORMAT_RGBA8)
-	terrain_details.fill(color)
-	
-	color.a = 0
-	terrain_details.fill_rect(Rect2i(0, 0, width, sky_height), color)
-	
 	init_chunks()
 	update_terrain()
 	
@@ -49,7 +42,7 @@ func init_chunks() -> void:
 	for child in $Chunks.get_children():
 		child.queue_free()
 		
-	chunks = TerrainChunk.generate_chunks(width, height, chunk_size)
+	chunks = TerrainChunk.generate_chunks(width, height, chunk_size, noise, terrain_color)
 	for chunk_idx in range(chunks.size()):
 		var chunk = chunks[chunk_idx]
 		$Chunks.add_child(chunk)
@@ -58,7 +51,7 @@ func init_chunks() -> void:
 func update_terrain() -> void:
 	for chunk_idx in dirty_chunks:
 		var chunk = chunks[chunk_idx]
-		chunk.update(terrain_details)
+		chunk.update()
 		
 	dirty_chunks.clear()
 	
@@ -81,9 +74,13 @@ func carve_circle(center: Vector2i, radius: int) -> void:
 			var y = center.y + dy
 			if x >= 0 and x < width and y >= 0 and y < height:
 				var chunk_index = TerrainChunk.get_chunk_index(width, height, chunk_size, x, y)
+				var chunk = chunks[chunk_index]
+				var terrain = chunk.terrain
+				var cx = x - chunk.rect.position.x
+				var cy = y - chunk.rect.position.y
 				# This array should usually be tiny, so the "not in" check should be cheap.
 				if chunk_index not in dirty_chunks:
 					dirty_chunks.append(chunk_index)
-				var color = terrain_details.get_pixel(x, y)
+				var color = terrain.get_pixel(cx, cy)
 				color.a = 0
-				terrain_details.set_pixel(x, y, color)
+				terrain.set_pixel(cx, cy, color)

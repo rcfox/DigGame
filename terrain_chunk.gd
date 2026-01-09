@@ -4,13 +4,25 @@ extends Node2D
 var rect: Rect2i
 var sprite: Sprite2D
 var collision_body: StaticBody2D
+var terrain: Image
+var noise: FastNoiseLite
 
-static func generate_chunks(width: int, height: int, chunk_size: int) -> Array[TerrainChunk]:
+var terrain_threshold = -0.3
+var terrain_color: Color
+
+static func generate_chunks(
+	width: int,
+	height: int,
+	chunk_size: int,
+	noise_src: FastNoiseLite,
+	terrain_color: Color
+	) -> Array[TerrainChunk]:
 	var num_chunks = TerrainChunk.get_num_chunks(width, height, chunk_size)
 	var chunks: Array[TerrainChunk] = []
 	for chunk_idx in range(num_chunks):
 		var chunk_rect = TerrainChunk.get_chunk_rect(width, height, chunk_size, chunk_idx)
-		var chunk = TerrainChunk.new(chunk_rect)
+		var chunk = TerrainChunk.new(chunk_rect, noise_src, terrain_color)
+		chunk.generate_from_noise()
 		chunks.append(chunk)
 	return chunks
 	
@@ -46,8 +58,11 @@ static func get_chunk_rect(width: int, height: int, chunk_size: int, chunk_index
 	return Rect2i(x, y, w, h)
 
 
-func _init(chunk_rect: Rect2i) -> void:
+func _init(chunk_rect: Rect2i, noise_src: FastNoiseLite, terrain_color: Color) -> void:
 	self.rect = chunk_rect
+	self.noise = noise_src
+	self.terrain_color = terrain_color
+	self.terrain = Image.create_empty(self.rect.size[0], self.rect.size[1], false, Image.FORMAT_RGBA8)
 	self.position = self.rect.position
 	self.collision_body = StaticBody2D.new()
 	self.collision_body.visible = false
@@ -55,19 +70,30 @@ func _init(chunk_rect: Rect2i) -> void:
 	self.sprite.position = self.rect.size / 2.0
 	add_child(self.sprite)
 	add_child(self.collision_body)
+	
+func generate_from_noise() -> void:
+	var transparent = Color(terrain_color)
+	transparent.a = 0
+	for y in rect.size.y:
+		for x in rect.size.x:
+			var world_pos = rect.position + Vector2i(x, y)
+			var noise_val = noise.get_noise_2d(world_pos.x, world_pos.y)
+			if noise_val > terrain_threshold:
+				terrain.set_pixel(x, y, terrain_color)
+			else:
+				terrain.set_pixel(x, y, transparent)
 
-func update(full_terrain: Image) -> void:
-	var chunk_image = full_terrain.get_region(self.rect)
+func update() -> void:
 	if not sprite.texture:
-		sprite.texture = ImageTexture.create_from_image(chunk_image)
+		sprite.texture = ImageTexture.create_from_image(terrain)
 	else:
-		sprite.texture.update(chunk_image)
+		sprite.texture.update(terrain)
 	
 	for child in collision_body.get_children():
 		child.queue_free()
 	
 	var collidable = BitMap.new()
-	collidable.create_from_image_alpha(chunk_image)
+	collidable.create_from_image_alpha(terrain)
 	
 	var polygons = collidable.opaque_to_polygons(Rect2i(Vector2i(0, 0), rect.size), 2)
 	for polygon in polygons:

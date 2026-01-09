@@ -6,10 +6,8 @@
 [node name="World" type="Node2D" unique_id=869695374]
 
 [node name="DestructibleTerrain" parent="." unique_id=1032730928 instance=ExtResource("1_f3sb7")]
-width = 10240
-height = 7680
 
 [node name="Player" parent="." unique_id=44482857 instance=ExtResource("2_fj7yv")]
-position = Vector2(194, 36)
+position = Vector2(284, -245)
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=65891921]
