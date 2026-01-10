@@ -1,20 +1,19 @@
 class_name TerrainChunk
 extends Node2D
 
-var coords: Vector2i
+var coords: Vector2i # Chunk coords, not pixels or world coords
 var size: Vector2i
 var sprite: Sprite2D
 var collision_body: StaticBody2D
 var terrain: Image
+var is_modified: bool = false
 
 var terrain_threshold = -0.3
-var terrain_color: Color
 
-func _init(chunk_coords: Vector2i, chunk_size: Vector2i, terrain_color_: Color) -> void:
+func _init(chunk_coords: Vector2i, chunk_size: Vector2i) -> void:
 	self.coords = chunk_coords
 	self.position = Vector2(chunk_coords.x * chunk_size.x, chunk_coords.y * chunk_size.y)
 	self.size = chunk_size
-	self.terrain_color = terrain_color_
 	self.terrain = Image.create_empty(self.size[0], self.size[1], false, Image.FORMAT_RGBA8)
 	self.collision_body = StaticBody2D.new()
 	self.collision_body.visible = false
@@ -23,7 +22,7 @@ func _init(chunk_coords: Vector2i, chunk_size: Vector2i, terrain_color_: Color) 
 	add_child(self.sprite)
 	add_child(self.collision_body)
 	
-func generate_from_noise(noise: FastNoiseLite) -> void:
+func generate_from_noise(noise: FastNoiseLite, terrain_color: Color) -> void:
 	var transparent = Color(terrain_color)
 	transparent.a = 0
 	for y in size.y:

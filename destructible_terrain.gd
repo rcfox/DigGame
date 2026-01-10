@@ -32,13 +32,14 @@ func get_chunk_coords(world_pos: Vector2i) -> Vector2i:
 	
 func get_or_create_chunk(chunk_coords: Vector2i) -> TerrainChunk:
 	if chunk_coords not in chunks:
-		var chunk = TerrainChunk.new(chunk_coords, Vector2i(chunk_size, chunk_size), terrain_color)
+		var chunk = TerrainChunk.new(chunk_coords, Vector2i(chunk_size, chunk_size))
 		
 		if chunk_coords in unloaded_chunks:
+			chunk.is_modified = true
 			chunk.terrain.load_png_from_buffer(unloaded_chunks[chunk_coords])
 			unloaded_chunks.erase(chunk_coords)
 		else:
-			chunk.generate_from_noise(noise)
+			chunk.generate_from_noise(noise, terrain_color)
 		chunk.update()
 		$Chunks.add_child(chunk)
 		chunks[chunk_coords] = chunk
@@ -94,7 +95,8 @@ func update_loaded_chunks() -> void:
 func unload_chunk(chunk_coords: Vector2i) -> void:
 	if chunk_coords in chunks:
 		var chunk = chunks[chunk_coords]
-		unloaded_chunks[chunk_coords] = chunk.terrain.save_png_to_buffer()
+		if chunk.is_modified:
+			unloaded_chunks[chunk_coords] = chunk.terrain.save_png_to_buffer()
 		chunk.queue_free()
 		chunks.erase(chunk_coords)
 	
@@ -125,6 +127,7 @@ func carve_circle(center: Vector2i, radius: int) -> void:
 			var chunk_coords = Vector2i(cx, cy)
 			if chunk_coords in chunks:
 				dirty_chunks[chunk_coords] = true
+				chunks[chunk_coords].is_modified = true
 	
 	var rsq = radius * radius
 	for dy in range(-radius, radius + 1):
